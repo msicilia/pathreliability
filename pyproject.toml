@@ -1,0 +1,28 @@
+[project]
+name = "pathreliability"
+version = "0.1.0"
+description = "Retraining-free reliability audit and abstention gate for frozen medical-imaging encoders."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    "numpy",
+    "scikit-learn",
+    "scipy",
+    "pillow",
+]
+
+[project.optional-dependencies]
+# needed only to run models: your own adapter brings its own torch; this extra
+# also enables the zero-code `--builtin timm:/torchvision:` convenience.
+torch = ["torch", "torchvision", "timm"]
+
+[project.scripts]
+pathreliability = "pathreliability.__main__:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["pathreliability*"]

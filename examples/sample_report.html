@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>Reliability report — resnet18</title>
+<style>
+ body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:820px;margin:32px auto;
+   padding:0 20px;color:#202124;line-height:1.5}
+ h1{font-size:22px;margin:0 0 2px} h2{font-size:15px;color:#5f6368;margin:26px 0 8px;
+   text-transform:uppercase;letter-spacing:.04em}
+ table{border-collapse:collapse;width:100%}
+ code{background:#f1f3f4;padding:1px 5px;border-radius:4px;font-size:13px}
+ .banner{background:#fef7e0;border-left:6px solid #8a6d00;padding:14px 18px;border-radius:8px;margin:10px 0 4px}
+ .banner b{color:#8a6d00}
+</style></head><body>
+<h1>Reliability report — resnet18</h1>
+<div style="color:#5f6368;font-size:14px">tier A · embed_dim 512 ·
+  9 classes · n_test 113 · schema 1.0</div>
+<div class="banner"><b>WARN: Usable with the caveats below.</b>
+  </div>
+<h2>Verdict by axis</h2><table><tr><td style="padding:6px 12px">ood</td><td style="padding:6px 12px"><span style="background:#fef7e0;color:#8a6d00;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px">WARN</span></td></tr><tr><td style="padding:6px 12px">corruption</td><td style="padding:6px 12px"><span style="background:#fef7e0;color:#8a6d00;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px">WARN</span></td></tr><tr><td style="padding:6px 12px">calibration</td><td style="padding:6px 12px"><span style="background:#e6f4ea;color:#137333;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px">PASS</span></td></tr><tr><td style="padding:6px 12px">selective prediction</td><td style="padding:6px 12px"><span style="background:#e6f4ea;color:#137333;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px">PASS</span></td></tr></table>
+<h2>Caveats</h2><ul style="padding-left:20px;margin:4px 0"><li style="margin:6px 0"><code>blur_detection_weak</code> — Blur detection is weak at mild blur (min AUROC 0.542) but improves with severity (up to 0.957); the gate may miss lightly-blurred inputs.</li></ul>
+<h2>Metrics</h2><table><tr><td style="padding:4px 12px;color:#555">far-OOD AUROC (Maha / kNN)</td><td style="padding:4px 12px"><b>0.804 / 0.575</b></td></tr><tr><td style="padding:4px 12px;color:#555">artifact-rejection AUROC</td><td style="padding:4px 12px"><b>0.867 (held out ADI, BACK, DEB)</b></td></tr><tr><td style="padding:4px 12px;color:#555">near-OOD AUROC (mean)</td><td style="padding:4px 12px"><b>0.701</b></td></tr><tr><td style="padding:4px 12px;color:#555">blur OOD-AUROC (σ=1/2/3)</td><td style="padding:4px 12px"><b>0.542 / 0.802 / 0.957</b></td></tr><tr><td style="padding:4px 12px;color:#555">probe accuracy</td><td style="padding:4px 12px"><b>0.841</b></td></tr><tr><td style="padding:4px 12px;color:#555">calibration ECE (raw → temp)</td><td style="padding:4px 12px"><b>0.084 → 0.085 (T=0.84)</b></td></tr><tr><td style="padding:4px 12px;color:#555">selective-prediction AURC</td><td style="padding:4px 12px"><b>0.05</b></td></tr></table>
+<h2>Deployable gate</h2><table><tr><td style="padding:4px 12px;color:#555">stage 1 — novelty τ_ood</td><td style="padding:4px 12px"><b>1196.501</b></td></tr><tr><td style="padding:4px 12px;color:#555">stage 2 — confidence τ_conf</td><td style="padding:4px 12px"><b>0.638</b></td></tr><tr><td style="padding:4px 12px;color:#555">inference cost</td><td style="padding:4px 12px"><b>one distance evaluation + two comparisons per patch</b></td></tr></table>
+<div style="color:#5f6368;font-size:13px;margin-top:6px">Regime caveat: stage 2 is trustworthy
+  only where predicted confidence tracks correctness; under weak whole-slide labels, aggregate to
+  the slide rather than abstain patch-by-patch.</div>
+<h2>Provenance</h2><div style="color:#5f6368;font-size:13px">Retraining-free audit on frozen
+  embeddings + a linear probe. No weight access, no gradients, no pretraining data. Primary
+  scorer Mahalanobis, secondary kNN. ID dataset: <code>data/nct_dl/NCT-CRC-HE-100K</code>; split:
+  stratified image-level (BYOD).</div>
+</body></html>
