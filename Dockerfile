@@ -2,7 +2,9 @@
 # Build:  docker build -t pathreliability .
 # Run:    docker run --rm -v "$PWD/my_dataset:/data" -v "$PWD/out:/out" \
 #             pathreliability audit --builtin timm:resnet50 --data /data --out /out
-FROM python:3.11-slim
+# pulled via Google's read-through mirror of Docker Hub to avoid Docker Hub
+# rate-limits / auth.docker.io flakiness on CI runners (equivalent to python:3.11-slim)
+FROM mirror.gcr.io/library/python:3.11-slim
 
 # minimal system libs for Pillow / scipy
 RUN apt-get update && apt-get install -y --no-install-recommends \
