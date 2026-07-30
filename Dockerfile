@@ -14,10 +14,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 COPY . /app
 
-# core tool (numpy/scikit-learn/scipy/pillow), then CPU-only torch stack for running models
+# core tool (numpy/scikit-learn/scipy/pillow), then CPU-only torch stack for running models.
+# amd64 uses PyTorch's CPU wheel index (smaller than the CUDA default); arm64 uses PyPI, which
+# ships CPU-only aarch64 wheels. TARGETARCH is provided automatically by buildx.
+ARG TARGETARCH
 RUN pip install --no-cache-dir . \
-    && pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu \
-        torch torchvision \
+    && if [ "$TARGETARCH" = "amd64" ]; then \
+         pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch torchvision; \
+       else \
+         pip install --no-cache-dir torch torchvision; \
+       fi \
     && pip install --no-cache-dir timm
 
 # audits write here unless --out is mounted elsewhere
