@@ -32,8 +32,15 @@ git push -u origin main
 
 ## 3. Build and publish the container image
 
-Publish the image alongside the source so the tool can be run without a local Python install.
-Using the GitHub Container Registry (GHCR):
+**Automated (recommended):** the repository includes a GitHub Actions workflow
+(`.github/workflows/publish.yml`) that builds the image and pushes it to
+`ghcr.io/<owner>/pathreliability` on every push to `main` and on version tags (e.g. `v0.1.0`),
+using the automatic `GITHUB_TOKEN` — **no local Docker and no personal token required**. After the
+first successful run, make the package public once (Settings → Packages, as in step 4 below). To
+cut a versioned image: `git tag v0.1.0 && git push origin v0.1.0`.
+
+**Manual (if you prefer to build locally):** publish the image alongside the source using the
+GitHub Container Registry (GHCR):
 
 ```bash
 docker build -t ghcr.io/msicilia/pathreliability:0.1.0 -t ghcr.io/msicilia/pathreliability:latest .
