@@ -1,6 +1,6 @@
 # PathReliability
 
-A retraining-free reliability audit and abstention gate for frozen image encoders.
+A reliability audit and abstention gate for frozen image encoders.
 
 Encoders are usually selected on accuracy, which does not show whether a model flags the inputs
 it should not classify. PathReliability takes a frozen encoder and a labelled patch set, fits a
@@ -8,8 +8,10 @@ linear classifier on the embeddings, and measures how that classifier behaves be
 accuracy. It also fits a two-threshold gate that rejects unfamiliar patches and abstains on
 uncertain ones. The encoder is only asked to embed: it is not retrained.
 
-The tool runs the analysis of the paper *A Retraining-Free Reliability Audit and Abstention Gate
-for Frozen Pathology Foundation Models* on your model and your data. It ships no datasets.
+The tool runs the analysis of the paper *A Reliability Audit and Abstention Gate for Frozen
+Pathology Foundation Models* on your model and your data. It ships no datasets. The
+code and results of the paper itself are at
+[pathology-fm-reliability](https://github.com/msicilia/pathology-fm-reliability).
 
 ## What it measures
 
@@ -208,7 +210,8 @@ embeddings, write them to an `.npz` file with the arrays listed at the top of
 
 ## Validation
 
-The functions that compute the audit are those of the paper's analysis code, and three checks in
+The functions that compute the audit are those of the paper's
+[analysis code](https://github.com/msicilia/pathology-fm-reliability), and three checks in
 [`tests/`](tests/) keep them so:
 
 - `tests/test_paper_equivalence.py` runs in CI and compares the audit with the output of the

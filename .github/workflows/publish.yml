@@ -2,7 +2,7 @@ name: Test, build and publish image
 
 # Runs the tests, then builds the container image and pushes it to the GitHub Container Registry
 # (ghcr.io/<owner>/pathreliability). Runs on every push to main and on version
-# tags (e.g. v0.1.0). No local Docker and no personal token are required — the
+# tags (e.g. v0.2.0). No local Docker and no personal token are required — the
 # job authenticates with the automatic GITHUB_TOKEN.
 
 on:
@@ -50,7 +50,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}}          # v0.1.0 -> 0.1.0
+            type=semver,pattern={{version}}          # v0.2.0 -> 0.2.0
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push

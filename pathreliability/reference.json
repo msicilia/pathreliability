@@ -1,5 +1,5 @@
 {
- "source": "A Retraining-Free Reliability Audit and Abstention Gate for Frozen Pathology Foundation Models",
+ "source": "A Reliability Audit and Abstention Gate for Frozen Pathology Foundation Models",
  "encoders": [
   "Lunit",
   "CTransPath",

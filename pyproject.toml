@@ -1,7 +1,7 @@
 [project]
 name = "pathreliability"
 version = "0.2.0"
-description = "Retraining-free reliability audit and abstention gate for frozen image encoders."
+description = "Reliability audit and abstention gate for frozen image encoders."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }

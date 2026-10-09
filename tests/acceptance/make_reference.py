@@ -118,8 +118,8 @@ def main():
              "ordinal_region_labels": ("grading, region-level labels", ("sicap",)),
              "ordinal_slide_labels": ("grading, whole-slide labels", ("panda",))}
     reference = {
-        "source": "A Retraining-Free Reliability Audit and Abstention Gate for Frozen "
-                  "Pathology Foundation Models",
+        "source": "A Reliability Audit and Abstention Gate for Frozen Pathology "
+                  "Foundation Models",
         "encoders": [config.display(m) for m in models],
         "range": "minimum, median and maximum over the encoders and the tasks of one kind, "
                  "of the value of one encoder on one task",
