@@ -1,29 +1,71 @@
-<!doctype html><html><head><meta charset="utf-8">
-<title>Reliability report — resnet18</title>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reliability report: TextureBlind</title>
 <style>
- body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:820px;margin:32px auto;
-   padding:0 20px;color:#202124;line-height:1.5}
- h1{font-size:22px;margin:0 0 2px} h2{font-size:15px;color:#5f6368;margin:26px 0 8px;
-   text-transform:uppercase;letter-spacing:.04em}
- table{border-collapse:collapse;width:100%}
- code{background:#f1f3f4;padding:1px 5px;border-radius:4px;font-size:13px}
- .banner{background:#fef7e0;border-left:6px solid #8a6d00;padding:14px 18px;border-radius:8px;margin:10px 0 4px}
- .banner b{color:#8a6d00}
+ :root { --fg:#1f2328; --dim:#656d76; --line:#d0d7de; --bg:#ffffff; --band:#f6f8fa; }
+ @media (prefers-color-scheme: dark) {
+   :root { --fg:#e6edf3; --dim:#9198a1; --line:#3d444d; --bg:#0d1117; --band:#151b23; } }
+ body { font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--fg);
+   background:var(--bg); max-width:920px; margin:32px auto; padding:0 16px; line-height:1.5; }
+ h1 { font-size:22px; margin:0 0 4px; }
+ h2 { font-size:17px; margin:34px 0 6px; padding-top:14px; border-top:1px solid var(--line); }
+ p { margin:6px 0 10px; }
+ .dim { color:var(--dim); font-size:13px; font-weight:400; }
+ .wrap { overflow-x:auto; }
+ table { border-collapse:collapse; width:100%; margin:8px 0 12px; font-size:14px; }
+ th, td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--line);
+   vertical-align:top; }
+ th { background:var(--band); font-weight:600; }
+ th.n, td.n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+ th.n { white-space:normal; }
+ ul { margin:6px 0 10px; padding-left:20px; }
+ details { margin:6px 0 12px; } summary { cursor:pointer; color:var(--dim); }
+ code { background:var(--band); padding:1px 5px; border-radius:4px; font-size:13px; }
 </style></head><body>
-<h1>Reliability report — resnet18</h1>
-<div style="color:#5f6368;font-size:14px">tier A · embed_dim 512 ·
-  9 classes · n_test 113 · schema 1.0</div>
-<div class="banner"><b>WARN: Usable with the caveats below.</b>
-  </div>
-<h2>Verdict by axis</h2><table><tr><td style="padding:6px 12px">ood</td><td style="padding:6px 12px"><span style="background:#fef7e0;color:#8a6d00;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px">WARN</span></td></tr><tr><td style="padding:6px 12px">corruption</td><td style="padding:6px 12px"><span style="background:#fef7e0;color:#8a6d00;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px">WARN</span></td></tr><tr><td style="padding:6px 12px">calibration</td><td style="padding:6px 12px"><span style="background:#e6f4ea;color:#137333;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px">PASS</span></td></tr><tr><td style="padding:6px 12px">selective prediction</td><td style="padding:6px 12px"><span style="background:#e6f4ea;color:#137333;padding:2px 10px;border-radius:12px;font-weight:600;font-size:13px">PASS</span></td></tr></table>
-<h2>Caveats</h2><ul style="padding-left:20px;margin:4px 0"><li style="margin:6px 0"><code>blur_detection_weak</code> — Blur detection is weak at mild blur (min AUROC 0.542) but improves with severity (up to 0.957); the gate may miss lightly-blurred inputs.</li></ul>
-<h2>Metrics</h2><table><tr><td style="padding:4px 12px;color:#555">far-OOD AUROC (Maha / kNN)</td><td style="padding:4px 12px"><b>0.804 / 0.575</b></td></tr><tr><td style="padding:4px 12px;color:#555">artifact-rejection AUROC</td><td style="padding:4px 12px"><b>0.867 (held out ADI, BACK, DEB)</b></td></tr><tr><td style="padding:4px 12px;color:#555">near-OOD AUROC (mean)</td><td style="padding:4px 12px"><b>0.701</b></td></tr><tr><td style="padding:4px 12px;color:#555">blur OOD-AUROC (σ=1/2/3)</td><td style="padding:4px 12px"><b>0.542 / 0.802 / 0.957</b></td></tr><tr><td style="padding:4px 12px;color:#555">probe accuracy</td><td style="padding:4px 12px"><b>0.841</b></td></tr><tr><td style="padding:4px 12px;color:#555">calibration ECE (raw → temp)</td><td style="padding:4px 12px"><b>0.084 → 0.085 (T=0.84)</b></td></tr><tr><td style="padding:4px 12px;color:#555">selective-prediction AURC</td><td style="padding:4px 12px"><b>0.05</b></td></tr></table>
-<h2>Deployable gate</h2><table><tr><td style="padding:4px 12px;color:#555">stage 1 — novelty τ_ood</td><td style="padding:4px 12px"><b>1196.501</b></td></tr><tr><td style="padding:4px 12px;color:#555">stage 2 — confidence τ_conf</td><td style="padding:4px 12px"><b>0.638</b></td></tr><tr><td style="padding:4px 12px;color:#555">inference cost</td><td style="padding:4px 12px"><b>one distance evaluation + two comparisons per patch</b></td></tr></table>
-<div style="color:#5f6368;font-size:13px;margin-top:6px">Regime caveat: stage 2 is trustworthy
-  only where predicted confidence tracks correctness; under weak whole-slide labels, aggregate to
-  the slide rather than abstain patch-by-patch.</div>
-<h2>Provenance</h2><div style="color:#5f6368;font-size:13px">Retraining-free audit on frozen
-  embeddings + a linear probe. No weight access, no gradients, no pretraining data. Primary
-  scorer Mahalanobis, secondary kNN. ID dataset: <code>data/nct_dl/NCT-CRC-HE-100K</code>; split:
-  stratified image-level (BYOD).</div>
+<h1>Reliability report: TextureBlind</h1>
+<div class=dim>./sample_data · 6 classes · 480
+ training and 120 test patches · no patient or slide ids · embedding dimension
+ 6</div>
+
+<p>This report measures how a linear classifier on the frozen embeddings of this model behaves
+beyond its accuracy. Each value is shown beside the range obtained for 11
+pathology encoders in the method paper. The ranges give context; they are not thresholds, and
+the report states no verdict.</p>
+<ul><li>The patches carry no patient or slide ids, so the split and the tuning of the classifier are at patch level. If several patches come from the same patient or slide, accuracy and calibration are likely to be optimistic.</li><li>Tuning check was not assessed: the patches carry no patient or slide ids.</li></ul>
+
+<h2>The classifier</h2>
+<p>Mean and standard deviation over the splits, with a 95% bootstrap interval in brackets.</p>
+<div class=wrap><table><thead><tr><th></th><th class=n>This model, 5 splits</th><th class=n>Paper: categorical tasks</th></tr></thead><tbody><tr><td>Accuracy<div class=dim>share of test patches classified correctly</div></td><td class=n>1.000 ± 0.000 <span class=dim>[1.000, 1.000]</span></td><td class=n>–</td></tr><tr><td>Calibration error (ECE)<div class=dim>gap between stated confidence and accuracy; lower is better</div></td><td class=n>0.020 ± 0.001 <span class=dim>[0.017, 0.023]</span></td><td class=n>0.000 to 0.100<div class=dim>median 0.005</div></td></tr><tr><td>Error ranking: excess AURC as a share of its random value<div class=dim>0% when confidence ranks every error last, 100% when it carries no information</div></td><td class=n>not defined: no errors</td><td class=n>0% to 38%<div class=dim>median 20%</div></td></tr></tbody></table></div>
+
+<h2>Detection of inputs the classifier should not receive</h2>
+<p>AUROC of each novelty score at separating the test patches from the patches in each row;
+0.5 is chance and 1 is perfect separation.</p>
+<div class=wrap><table><thead><tr><th></th><th class=n>Mahalanobis</th><th class=n>kNN</th><th class=n>energy</th><th class=n>max. softmax</th><th class=n>Paper: categorical tasks (Mahalanobis)</th></tr></thead><tbody><tr><td>Second dataset<div class=dim>600 patches of ./sample_data_ood</div></td><td class=n>1.00</td><td class=n>0.91</td><td class=n>0.36</td><td class=n>0.56</td><td class=n>0.89 to 1.00<div class=dim>median 1.00</div></td></tr><tr><td>Unseen class<div class=dim>each of the 6 classes held out in turn; mean</div></td><td class=n>1.00</td><td class=n>0.95</td><td class=n>0.54</td><td class=n>0.77</td><td class=n>0.87 to 1.00<div class=dim>median 1.00</div></td></tr><tr><td>Non-diagnostic classes<div class=dim>BACK, DEB held out jointly; 40 patches</div></td><td class=n>1.00</td><td class=n>0.94</td><td class=n>0.99</td><td class=n>1.00</td><td class=n>0.97 to 1.00<div class=dim>median 1.00</div></td></tr><tr><td>Blur, σ = 1.0<div class=dim>the test patches, blurred</div></td><td class=n>0.52</td><td class=n>0.50</td><td class=n>0.51</td><td class=n>0.51</td><td class=n>0.55 to 1.00<div class=dim>median 0.76</div></td></tr><tr><td>Blur, σ = 2.0<div class=dim>the test patches, blurred</div></td><td class=n>0.71</td><td class=n>0.52</td><td class=n>0.53</td><td class=n>0.56</td><td class=n>0.67 to 1.00<div class=dim>median 0.97</div></td></tr><tr><td>Blur, σ = 3.0<div class=dim>the test patches, blurred</div></td><td class=n>0.84</td><td class=n>0.54</td><td class=n>0.57</td><td class=n>0.62</td><td class=n>0.89 to 1.00<div class=dim>median 1.00</div></td></tr></tbody></table></div>
+<details><summary>Unseen class, by held-out class</summary><table><thead><tr><th>Held-out class</th><th class=n>patches</th><th class=n>Mahalanobis</th><th class=n>kNN</th><th class=n>energy</th><th class=n>max. softmax</th></tr></thead><tbody><tr><td>BACK</td><td class=n>20</td><td class=n>1.00</td><td class=n>0.94</td><td class=n>0.04</td><td class=n>1.00</td></tr><tr><td>DEB</td><td class=n>20</td><td class=n>1.00</td><td class=n>0.90</td><td class=n>1.00</td><td class=n>1.00</td></tr><tr><td>tissue_a</td><td class=n>20</td><td class=n>1.00</td><td class=n>0.89</td><td class=n>0.00</td><td class=n>0.00</td></tr><tr><td>tissue_b</td><td class=n>20</td><td class=n>1.00</td><td class=n>1.00</td><td class=n>1.00</td><td class=n>1.00</td></tr><tr><td>tissue_c</td><td class=n>20</td><td class=n>1.00</td><td class=n>1.00</td><td class=n>0.56</td><td class=n>0.71</td></tr><tr><td>tissue_d</td><td class=n>20</td><td class=n>1.00</td><td class=n>1.00</td><td class=n>0.63</td><td class=n>0.90</td></tr></tbody></table></details>
+
+<h2>Accuracy under blur</h2><p>Whether blur harms the classifier, which is what makes its detection matter.</p><div class=wrap><table><thead><tr><th></th><th class=n>Accuracy</th><th class=n>Change</th><th class=n>Paper: categorical tasks</th></tr></thead><tbody><tr><td>Unblurred</td><td class=n>1.000</td><td class=n></td><td class=n></td></tr><tr><td>σ = 1.0</td><td class=n>1.000</td><td class=n>0.000</td><td class=n>-0.022 to +0.025<div class=dim>median 0.000</div></td></tr><tr><td>σ = 2.0</td><td class=n>1.000</td><td class=n>0.000</td><td class=n>-0.136 to +0.016<div class=dim>median -0.001</div></td></tr><tr><td>σ = 3.0</td><td class=n>1.000</td><td class=n>0.000</td><td class=n>-0.419 to +0.015<div class=dim>median -0.022</div></td></tr></tbody></table></div>
+
+<h2>The gate</h2>
+<p>A patch is rejected when its Mahalanobis distance exceeds the novelty threshold
+(<code>tau_ood</code> = 12.68); otherwise the classifier abstains when its
+confidence is below the confidence threshold (<code>tau_conf</code> = 0.964).
+Both were set on 96 validation patches taken from the training split
+and applied unchanged to everything below.</p>
+<div class=wrap><table><thead><tr><th>Rejected by the novelty threshold</th><th class=n>This model</th><th class=n>Paper: categorical tasks</th></tr></thead><tbody><tr><td>Test patches of the task <div class=dim>the cost of the gate; 5% by design</div></td><td class=n>4%</td><td class=n>1% to 8%<div class=dim>median 5%</div></td></tr><tr><td>Second dataset</td><td class=n>100%</td><td class=n>50% to 100%<div class=dim>median 100%</div></td></tr><tr><td>Non-diagnostic classes <div class=dim>gate fitted without them</div></td><td class=n>100%</td><td class=n>86% to 100%<div class=dim>median 98%</div></td></tr><tr><td>Blur, σ = 1.0</td><td class=n>4%</td><td class=n>3% to 100%<div class=dim>median 17%</div></td></tr><tr><td>Blur, σ = 2.0</td><td class=n>18%</td><td class=n>8% to 100%<div class=dim>median 83%</div></td></tr><tr><td>Blur, σ = 3.0</td><td class=n>68%</td><td class=n>39% to 100%<div class=dim>median 100%</div></td></tr></tbody></table></div>
+<div class=wrap><table><thead><tr><th></th><th class=n>Patches kept</th><th class=n>Accuracy of the kept patches</th></tr></thead><tbody><tr><td>No gate</td><td class=n>100%</td><td class=n>1.000</td></tr><tr><td>Novelty threshold</td><td class=n>96%</td><td class=n>1.000</td></tr><tr><td>Novelty and confidence thresholds</td><td class=n>78%</td><td class=n>1.000</td></tr></tbody></table></div>
+
+
+
+<h2>Method</h2>
+<p class=dim>Linear classifier: standardised embeddings, multinomial logistic regression, C
+selected among 7 values from 1e-06 to
+1 by 3-fold cross-validation
+(folds stratified by class, log-loss). Split: test side: one of 5 folds, stratified by class, at patch level (no patient or slide ids).
+Classifier metrics: 5 splits of the pooled embeddings; detection, blur
+and gate: the split stored in the embeddings file. Calibration error: 15
+equal-width bins. kNN: k = 50. The model was not retrained. Input: 224 pixels, mean 0, 0, 0, standard deviation 1, 1, 1.
+Reference ranges:
+minimum, median and maximum over the encoders and the tasks of one kind, of the value of one encoder on one task; from “A Retraining-Free Reliability Audit and Abstention Gate for Frozen Pathology Foundation Models”. Tool version
+0.2.0, report schema 2.0.</p>
 </body></html>

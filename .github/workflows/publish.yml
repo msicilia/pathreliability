@@ -1,6 +1,6 @@
-name: Build and publish image
+name: Test, build and publish image
 
-# Builds the container image and pushes it to the GitHub Container Registry
+# Runs the tests, then builds the container image and pushes it to the GitHub Container Registry
 # (ghcr.io/<owner>/pathreliability). Runs on every push to main and on version
 # tags (e.g. v0.1.0). No local Docker and no personal token are required — the
 # job authenticates with the automatic GITHUB_TOKEN.
@@ -12,7 +12,20 @@ on:
   workflow_dispatch:        # allows running it manually from the Actions tab
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: pip install -c constraints.txt ".[test]"
+      - name: Tests
+        run: pytest -q
+
   publish:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read

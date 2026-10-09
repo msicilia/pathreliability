@@ -1,179 +1,223 @@
 # PathReliability
 
-*A retraining-free reliability audit and abstention gate for frozen image encoders.*
+A retraining-free reliability audit and abstention gate for frozen image encoders.
 
-Encoders are commonly selected on predictive accuracy, which measures how often a model is correct
-but is silent on whether its outputs can be trusted when it is not. PathReliability audits a frozen
-encoder along the complementary axes that govern safe deployment and returns a structured
-reliability report together with a deployable abstention gate. It operates post hoc on cached
-embeddings and a linear probe, requiring no retraining and no access to model weights, gradients,
-or pretraining data.
+Encoders are usually selected on accuracy, which does not show whether a model flags the inputs
+it should not classify. PathReliability takes a frozen encoder and a labelled patch set, fits a
+linear classifier on the embeddings, and measures how that classifier behaves beyond its
+accuracy. It also fits a two-threshold gate that rejects unfamiliar patches and abstains on
+uncertain ones. The encoder is only asked to embed: it is not retrained.
 
-The audit characterises four properties that accuracy-based evaluation does not capture:
+The tool runs the analysis of the paper *A Retraining-Free Reliability Audit and Abstention Gate
+for Frozen Pathology Foundation Models* on your model and your data. It ships no datasets.
 
-- **Out-of-distribution (novelty) detection** — whether inputs unlike the training distribution
-  are flagged rather than silently classified.
-- **Corruption robustness** — whether image degradation such as blur is detected.
-- **Calibration** — whether predicted confidence agrees with empirical accuracy.
-- **Selective prediction** — whether abstaining on low-confidence inputs improves the accuracy of
-  those retained.
+## What it measures
 
----
+- **Detection of inputs the classifier should not receive**: patches from a second dataset, an
+  unseen class, classes you name as non-diagnostic, and blurred patches. Four post-hoc scorers
+  are reported (Mahalanobis distance, k-nearest-neighbour distance, energy, maximum softmax
+  probability).
+- **Calibration**: whether the classifier's confidence matches its accuracy.
+- **Error ranking**: whether low confidence identifies the errors, so that abstaining helps.
+- **Accuracy under blur**: whether blur harms the classifier, which is what makes detecting it
+  matter.
+- **The gate at one operating point**: what it rejects, what it costs, and how accurate the
+  retained predictions are.
+- **A tuning check**, when patient or slide ids are given: whether tuning the classifier on
+  folds that share a patient or slide makes it over-confident.
 
-## Applicability — check before installing
+The report states measured values, each beside the range the paper obtained for eleven pathology
+encoders. The ranges are context, not thresholds, and the report gives no verdict.
 
-This version audits **frozen feature encoders**: a model that maps a 2-D image to a fixed-length
-embedding vector (the representation used under linear probing). The tool applies to your model if:
+## What you need
 
-- it returns a **pooled embedding (feature vector) per image**;
-- that embedding can be obtained for a batch of images, through either a standard
-  `timm` / `torchvision` identifier or a short adapter (about ten lines, see below);
-- a **labelled dataset** is available in one-subfolder-per-class layout for the task the encoder
-  serves.
+- A model that maps an image patch to one embedding vector, available either as a `timm` or
+  `torchvision` model or through a short adapter (see below).
+- A labelled patch set: a directory with one subdirectory per class.
+- Optional, and each one enables part of the audit:
+  - the patient or slide of each patch (strongly recommended, see below);
+  - a second patch set from another organ or source;
+  - the names of the classes that are not diagnostic tissue.
 
-The following are **not supported** in this version:
+Not supported: slide-level and multiple-instance models, models that expose only class
+probabilities, and segmentation or detection networks.
 
-- classifiers exposing only class probabilities, with no accessible embedding;
-- slide-level or multiple-instance (MIL) aggregators;
-- segmentation and detection networks;
-- any method requiring model weights, gradients, or internal activations beyond the pooled
-  embedding.
+## Quick start
 
----
-
-## Usage (Docker)
-
-The tool is distributed as a container image for reproducible, dependency-isolated execution.
-Docker is the supported entry point; no local Python installation is required.
-
-```bash
-docker build -t pathreliability .        # or: docker pull ghcr.io/msicilia/pathreliability
-```
-
-The input dataset is a directory with **one subfolder per class**:
-
-```
-my_dataset/
-├── class_a/  img001.png  img002.png  …
-├── class_b/  …
-└── class_c/  …
-```
-
-Audit a standard model with no code, mounting the dataset and an output directory:
+With Docker (the image runs models on the CPU):
 
 ```bash
-docker run --rm \
-  -v "$PWD/my_dataset:/data" -v "$PWD/out:/out" \
-  pathreliability audit --builtin timm:resnet50 --data /data --out /out
+docker pull ghcr.io/msicilia/pathreliability
+docker run --rm --user "$(id -u):$(id -g)" \
+  -v "$PWD/patches:/data" -v "$PWD/out:/out" \
+  ghcr.io/msicilia/pathreliability audit --builtin timm:resnet50 --data /data --out /out
 ```
 
-The report is written to `out/report.html` on the host. A committed example is provided at
-[`examples/sample_report.html`](examples/sample_report.html) for inspection prior to running.
+From source, in an environment that has your model's framework:
 
----
+```bash
+pip install .            # add ".[torch]" for the --builtin wrappers
+pathreliability audit --builtin timm:resnet50 --data ./patches --out ./out
+```
 
-## Audit your own model
+Open `out/report.html`. An example, for a toy encoder of the
+[testkit](https://github.com/msicilia/pathreliability-testkit) on synthetic patches, is in
+[`examples/sample_report.html`](examples/sample_report.html).
 
-A model is provided through a small adapter (two methods, about ten lines); copy
-[`examples/my_model_adapter.py`](examples/my_model_adapter.py) as a starting point. The adapter is
-the entire integration surface:
+## Inputs
+
+```
+patches/
+├── class_a/   img001.png  img002.png  ...
+├── class_b/   ...
+└── class_c/   ...
+```
+
+**Patient or slide ids.** Patches of the same patient or slide are alike. Without ids, the test
+split and the tuning of the classifier share patients with the training data, and accuracy and
+calibration are likely to be optimistic. Give the ids in one of two ways:
+
+```bash
+--groups groups.csv            # columns: path, group  (and optionally site)
+--group-pattern '^(P\d+)_'     # first group of a regular expression, matched in the file name
+```
+
+With ids, whole patients or slides are held out for testing and kept together during tuning.
+A `site` column (for example the laboratory) also stratifies the split by site.
+
+**A second dataset.** `--far-data DIR` gives patches from another organ or source. Without it,
+the gate is not tested on foreign tissue and the report says so.
+
+**Non-diagnostic classes.** `--artefact-classes BACK DEB` names classes such as background or
+debris. They are held out together, and a second gate is fitted without them.
+
+**Ordered grades.** `--ordinal` treats the classes as grades in the order of their names and
+adds the quadratic weighted kappa.
+
+## Your own model
+
+A model is given through an adapter: a class with two methods.
 
 ```python
-from pathreliability.adapter import Encoder
 import numpy as np
+from pathreliability.adapter import Encoder
 
 class MyEncoder(Encoder):
-    embed_dim = 768
-    normalisation = "imagenet"          # or (mean, std) your model expects
+    input_size = 224                    # side of the square input, in pixels
+    normalisation = "imagenet"          # or (mean, std) per channel
+
     def load(self):
         import timm, torch
         self.torch = torch
         self.model = timm.create_model("hf-hub:me/my-encoder", pretrained=True,
                                        num_classes=0).eval()
-    def embed(self, batch):             # batch: float32 [N,224,224,3], normalised
+
+    def embed(self, batch):             # float32 [N, S, S, 3], resized and normalised
         x = self.torch.from_numpy(batch).permute(0, 3, 1, 2)
         with self.torch.no_grad():
             return self.model(x).cpu().numpy().astype(np.float32)
 ```
 
-Mount the adapter alongside the dataset and run:
-
 ```bash
-docker run --rm \
-  -v "$PWD/my_dataset:/data" -v "$PWD/out:/out" \
-  -v "$PWD/my_model_adapter.py:/work/adapter.py" \
-  pathreliability audit --adapter /work/adapter.py:MyEncoder \
-                        --data /data --ood-data /data_ood --out /out
+pathreliability audit --adapter my_model.py:MyEncoder --data ./patches \
+    --groups groups.csv --far-data ./other_organ --out ./out
 ```
 
-The container feeds `embed` a normalised batch and expects an embedding array back; **model
-weights never leave the container.** If your model has dependencies not present in the image,
-extend the `Dockerfile`; serving the model separately over HTTP behind the adapter contract is
-planned for a future release.
+Images are resized on the shorter side with bicubic interpolation, centre-cropped to
+`input_size`, scaled to [0, 1] and normalised. Check the normalisation: a `--builtin timm:` model
+uses the values stored with its weights, which are not always those its authors published.
+`--mean`, `--std` and `--input-size` replace the declared values, and the report records the
+ones that were used.
 
----
+In Docker, mount the adapter and, if the model needs packages that the image lacks, extend the
+`Dockerfile`.
 
-## What you get
+## Outputs
 
-In `./out/`:
+| File | Contents |
+|---|---|
+| `report.html` | the audit for a reader, each value beside the paper's range |
+| `report.json` | every value, with the schema version and the reference ranges |
+| `embeddings.npz` | the embeddings, so the audit can be repeated without the model |
+| `gate.npz` | the fitted gate |
+| `gate.json` | its two thresholds and the decision rule |
+| `gate_without_artefact.npz` | the gate fitted without the non-diagnostic classes, when named |
 
-| File | Intended reader | Contents |
-|---|---|---|
-| **`report.html`** | human reviewer | verdict banner, per-axis PASS/WARN/FAIL, caveats, metrics, and the gate |
-| `report.json` | downstream tooling / records | the same content, schema-versioned |
-| `gate.json` | deployment | the two thresholds (`τ_ood`, `τ_conf`) |
+The classifier metrics are means over five train/test splits of the embeddings, with bootstrap
+intervals. Detection, blur and the gate use the one split stored in the embeddings file.
 
-**Reading the verdict.** Each axis is PASS / WARN / FAIL. A **FAIL** means a blocking finding —
-e.g. `blur_anti_detection` (the model rates blurred images as *more* normal, so it would pass the
-degraded inputs a quality gate should reject) or `artifact_rejection_fail` (it can't tell tissue
-from background/debris). The report explains each in plain language.
+## Applying the gate
 
-**The gate** is the actionable output: a two-stage decision rule applied ahead of the model at
-inference — rejecting unfamiliar inputs (stage 1), then abstaining on low-confidence ones
-(stage 2) — at a cost of one distance evaluation and two comparisons per image.
+```bash
+pathreliability apply --gate out/gate.npz --adapter my_model.py:MyEncoder \
+    --data ./new_patches --out decisions.csv
+```
 
----
+Each patch receives one of three decisions:
+
+- `reject`: its distance to the training classes exceeds the novelty threshold;
+- `abstain`: it passes, but the classifier's confidence is below the confidence threshold;
+- `predict`: the classifier's prediction is retained.
+
+The thresholds are set on a validation part of the training split: the novelty threshold rejects
+5% of the validation patches, and the confidence threshold retains 80% of those that pass. The
+gate must be applied with the same model and preprocessing it was fitted with.
+
+## The two stages
+
+`audit` with a model runs two stages, which can also be run separately:
+
+```bash
+pathreliability embed --adapter my_model.py:MyEncoder --data ./patches --out emb.npz
+pathreliability audit --embeddings emb.npz --out ./out
+```
+
+Embedding is the slow stage and the only one that needs the model. If you already have
+embeddings, write them to an `.npz` file with the arrays listed at the top of
+[`pathreliability/audit.py`](pathreliability/audit.py) and run `audit --embeddings`.
 
 ## Options
 
-| Flag | Meaning |
+| Option | Meaning |
 |---|---|
-| `--data DIR` | ID dataset (one subfolder per class) — **required** |
-| `--builtin timm:<name>` \| `torchvision:<name>` | wrap a standard model with no code |
+| `--data DIR` | labelled patch set, one subdirectory per class |
+| `--builtin timm:<name>` or `torchvision:<name>` | a standard model, without code |
 | `--adapter file.py:Class` | your own model |
-| `--ood-data DIR` | a different-organ dataset → enables the cross-organ far-OOD axis |
-| `--limit N` | cap ID images (stratified) for a fast first run (default 1200; 0 = all) |
+| `--groups CSV`, `--group-pattern REGEX` | patient or slide id of each patch |
+| `--far-data DIR` | second patch set, from another organ or source |
+| `--artefact-classes A B` | classes that are not diagnostic tissue |
+| `--ordinal` | the classes are ordered grades |
+| `--blur 1 2 3` | blur sigmas, in pixels of a 224 x 224 input; `--blur` alone skips blur |
+| `--limit N` | embed at most N patches, the same number per class (default: all) |
+| `--mean`, `--std`, `--input-size` | replace the preprocessing the model declares |
+| `--embeddings FILE`, `--far FILE` | audit stored embeddings |
+| `--jobs N` | parallel workers (default: all cores) |
+| `--log-file FILE` | also write the log of the run to a file |
 | `--out DIR` | output directory (default `./out`) |
 
----
+## Limits
 
-## Definitions
+- The audit describes one model on one patch set. It does not show how the model behaves at
+  another hospital or scanner unless you supply such data as the second dataset.
+- Blur is the only image degradation that is tested.
+- The gate is evaluated at one operating point.
+- Every class needs patches from several patients or slides, so that each can appear on both
+  sides of a split.
+- In the paper, an unseen grade of a grading task was detected poorly by every encoder. A gate
+  of this kind should not be expected to catch unfamiliar grades.
 
-Several terms have a specific meaning in this tool:
+## Validation
 
-- **Out-of-distribution (OOD).** Defined *relative to the classes the linear probe was trained
-  on* — the task's in-distribution — **not** relative to the data the encoder saw during
-  pretraining. An input is OOD if it falls outside those probe classes. The tool makes no claim
-  about whether the encoder encountered such inputs during pretraining.
-- **Far-OOD.** Inputs from a different dataset or organ than the probe's task (cross-organ).
-- **Near-OOD.** A held-out class of the same domain (leave-one-class-out); harder than far-OOD.
-- **Artefact rejection.** Flagging non-diagnostic material (background, debris, adipose) as OOD
-  relative to diagnostic tissue.
-- **Corruption robustness.** Whether degraded inputs (Gaussian blur of increasing severity) are
-  detected as OOD.
-- **Calibration (ECE).** Agreement between predicted confidence and empirical accuracy, summarised
-  by the Expected Calibration Error.
-- **Selective prediction (AURC).** Abstaining on the least-confident inputs, summarised by the
-  Area Under the Risk–Coverage curve (lower is better).
-- **Abstention gate.** The deployable two-threshold rule the audit emits: a novelty threshold
-  (`τ_ood`) applied to the embedding, then a confidence threshold (`τ_conf`) applied to the probe.
-- **Embedding.** The fixed-length pooled feature vector the frozen encoder produces per image.
-- **Linear probe.** A logistic-regression classifier fitted on the frozen embeddings; the only
-  trained component of the audit.
+The functions that compute the audit are those of the paper's analysis code, and three checks in
+[`tests/`](tests/) keep them so:
 
----
+- `tests/test_paper_equivalence.py` runs in CI and compares the audit with the output of the
+  paper's code on synthetic embeddings.
+- `tests/acceptance/reproduce_paper.py` runs the audit on the paper's stored embeddings and
+  compares every value with the paper's result files.
+- `tests/acceptance/reproduce_embeddings.py` embeds the paper's patches again from the images
+  and compares.
 
-Method and validation: *"Do Frozen Pathology Foundation Models Know When They Don't Know?"*
-(thirteen encoders, six public datasets). This tool packages that audit for your own model.
+## Licence
 
-MIT-licensed. Issues and adapters for new model families welcome.
+MIT.

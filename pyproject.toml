@@ -1,21 +1,23 @@
 [project]
 name = "pathreliability"
-version = "0.1.0"
-description = "Retraining-free reliability audit and abstention gate for frozen medical-imaging encoders."
+version = "0.2.0"
+description = "Retraining-free reliability audit and abstention gate for frozen image encoders."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
-    "numpy",
-    "scikit-learn",
-    "scipy",
-    "pillow",
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "scikit-learn>=1.9",
+    "joblib>=1.4",
+    "pillow>=10.0",
 ]
 
 [project.optional-dependencies]
-# needed only to run models: your own adapter brings its own torch; this extra
-# also enables the zero-code `--builtin timm:/torchvision:` convenience.
+# needed only to run models: an adapter brings its own framework; this extra
+# enables the --builtin timm:<name> and torchvision:<name> wrappers
 torch = ["torch", "torchvision", "timm"]
+test = ["pytest"]
 
 [project.scripts]
 pathreliability = "pathreliability.__main__:main"
@@ -26,3 +28,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["pathreliability*"]
+
+[tool.setuptools.package-data]
+pathreliability = ["reference.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

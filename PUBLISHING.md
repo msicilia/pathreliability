@@ -1,84 +1,43 @@
-# Publishing this tool to GitHub
+# Releasing
 
-This folder is a self-contained repository. To put it online:
+The repository is https://github.com/msicilia/pathreliability.
 
-## 1. Make it its own git repo
+## Before a release
 
-This folder currently lives inside a larger research repo. Turn it into a standalone repo:
-
-```bash
-cd pathreliability          # this folder
-git init
-git add .
-git commit -m "PathReliability v0.1 — reliability audit + abstention gate for frozen encoders"
-```
-
-## 2. Create the GitHub repo and push
-
-With the GitHub CLI (`gh`):
+Run the tests:
 
 ```bash
-gh repo create pathreliability --public --source=. --push \
-  --description "Retraining-free reliability audit and abstention gate for frozen medical-imaging encoders"
+pip install -c constraints.txt ".[test]"
+pytest -q
 ```
 
-Or manually: create an empty repo on github.com, then
+If the analysis code of the method paper has changed, run the acceptance checks against a
+checkout of its repository, in an environment that has its dependencies:
 
 ```bash
-git remote add origin https://github.com/msicilia/pathreliability.git
-git branch -M main
-git push -u origin main
+python tests/acceptance/check_sync.py     --paper-repo PATH   # the copied functions are unchanged
+python tests/acceptance/make_expected.py  --paper-repo PATH   # expected values of the tests
+python tests/acceptance/make_reference.py --paper-repo PATH   # reference ranges of the report
+python tests/acceptance/reproduce_paper.py --paper-repo PATH --models lunit conch uni
 ```
 
-## 3. Build and publish the container image
+`reproduce_embeddings.py` repeats the comparison from the images, for encoders with open weights.
 
-**Automated (recommended):** the repository includes a GitHub Actions workflow
-(`.github/workflows/publish.yml`) that builds the image and pushes it to
-`ghcr.io/<owner>/pathreliability` on every push to `main` and on version tags (e.g. `v0.1.0`),
-using the automatic `GITHUB_TOKEN` — **no local Docker and no personal token required**. After the
-first successful run, make the package public once (Settings → Packages, as in step 4 below). To
-cut a versioned image: `git tag v0.1.0 && git push origin v0.1.0`.
+## Container image
 
-**Manual (if you prefer to build locally):** publish the image alongside the source using the
-GitHub Container Registry (GHCR):
+The workflow `.github/workflows/publish.yml` runs the tests, builds the image for linux/amd64
+and linux/arm64 and pushes it to `ghcr.io/msicilia/pathreliability`, on every push to `main`
+(tag `latest`) and on version tags:
 
 ```bash
-docker build -t ghcr.io/msicilia/pathreliability:0.1.0 -t ghcr.io/msicilia/pathreliability:latest .
-echo "$GITHUB_TOKEN" | docker login ghcr.io -u msicilia --password-stdin
-docker push ghcr.io/msicilia/pathreliability:0.1.0
-docker push ghcr.io/msicilia/pathreliability:latest
+git tag v0.2.0 && git push origin v0.2.0      # publishes ghcr.io/msicilia/pathreliability:0.2.0
 ```
 
-Verify the published image runs end-to-end before submission:
+The image installs the versions of `constraints.txt`. Update that file when the tool is
+validated with newer versions, and keep `version` in `pyproject.toml` and `__version__` in
+`pathreliability/__init__.py` equal to the tag.
 
-```bash
-docker run --rm -v "$PWD/my_dataset:/data" -v "$PWD/out:/out" \
-  ghcr.io/msicilia/pathreliability:latest audit --builtin timm:resnet50 --data /data --out /out
-```
+## What the repository holds
 
-Record the image reference, base image, and dependency versions wherever the tool is registered,
-and keep the `Dockerfile` in the repository root so the image is reproducible from source.
-
-## 4. Recommended repo settings
-
-- **Topics** (for discoverability): `computational-pathology`, `foundation-models`,
-  `out-of-distribution`, `uncertainty-quantification`, `calibration`, `trustworthy-ai`,
-  `medical-imaging`.
-- **Description**: as above.
-- Keep the **`out/`** directory git-ignored (already in `.gitignore`) so generated reports are
-  not committed; the committed example report lives at `examples/sample_report.html`.
-- Add a CITATION referencing the method paper once it is published.
-
-## What is (and isn't) in the repo
-
-Included: the package (`pathreliability/`), the adapter template and a sample report
-(`examples/`), `pyproject.toml`, `LICENSE` (MIT), `README.md`.
-
-Not included (intentionally): datasets, model weights, the `out/` run outputs, and any
-dependency on the research repo — the tool is fully standalone.
-
-## Companion repo
-
-For users who want to try the tool without their own model, point them at the **testkit**
-(tiny encoders with known pass/fail verdicts + a synthetic dataset). Link it from the README
-once it is published.
+The package, its tests, the adapter template and a sample report. It holds no datasets and no
+model weights; `out/` is ignored.
